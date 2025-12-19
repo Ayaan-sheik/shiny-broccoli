@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finova Market Data Viewer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Finova Market Data Viewer</h1>
+        <p class="subtitle">Real-time Stock & Cryptocurrency Data</p>
+      </header>
+
+      <div class="search-section">
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Enter stock symbol (AAPL) or crypto (bitcoin, ethereum)"
+          class="search-input"
+        />
+        <button id="searchBtn" class="search-btn">Search</button>
+      </div>
+
+      <div id="errorMessage" class="error-message hidden"></div>
+
+      <!-- Stock Information Section -->
+      <div id="stockSection" class="data-section hidden">
+        <h2 class="section-title">Stock Information</h2>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="label">Symbol:</span>
+            <span id="stockSymbol" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Price:</span>
+            <span id="stockPrice" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Change:</span>
+            <span id="stockChange" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Change %:</span>
+            <span id="stockChangePercent" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Volume:</span>
+            <span id="stockVolume" class="value">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Crypto Information Section -->
+      <div id="cryptoSection" class="data-section hidden">
+        <h2 class="section-title">Cryptocurrency Information</h2>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="label">Name:</span>
+            <span id="cryptoName" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Price (USD):</span>
+            <span id="cryptoPrice" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">24h Change:</span>
+            <span id="cryptoChange" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Market Cap:</span>
+            <span id="cryptoMarketCap" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">24h Volume:</span>
+            <span id="cryptoVolume" class="value">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Container -->
+      <div id="chartSection" class="chart-section hidden">
+        <h2 class="section-title">Price History (Last 7 Days)</h2>
+        <canvas id="priceChart"></canvas>
+      </div>
+
+      <footer>
+        <p>Data sources: CoinGecko & Alpha Vantage</p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
