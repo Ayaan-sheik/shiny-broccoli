@@ -23,8 +23,8 @@ const cryptoVolume = document.getElementById('cryptoVolume');
 // Chart
 let priceChart = null;
 
-// Alpha Vantage API Key (Free tier - users should get their own)
-const ALPHA_VANTAGE_API_KEY = 'ZORF7TSZB7412YXB'; // Replace with actual API key
+// Twelve Data API Key
+const TWELVE_DATA_API_KEY = '76c2df412658461c9fdca92d87b51f53';
 
 // Event Listeners
 searchBtn.addEventListener('click', handleSearch);
@@ -142,7 +142,7 @@ function displayCryptoData(data) {
 async function fetchStockData(symbol) {
   try {
     const response = await fetch(
-      `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`
+      `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=${TWELVE_DATA_API_KEY}`
     );
 
     if (!response.ok) {
@@ -151,21 +151,17 @@ async function fetchStockData(symbol) {
 
     const data = await response.json();
 
-    if (data.Note) {
-      throw new Error('API rate limit reached. Please try again later or use your own API key');
+    if (data.status === 'error') {
+      throw new Error(data.message || 'Stock symbol not found. Try: AAPL, TSLA, GOOGL, MSFT');
     }
 
-    if (!data['Global Quote'] || Object.keys(data['Global Quote']).length === 0) {
+    if (!data.symbol) {
       throw new Error('Stock symbol not found. Try: AAPL, TSLA, GOOGL, MSFT');
     }
 
-    displayStockData(data['Global Quote'], symbol);
-
-    // Add delay before fetching historical data (Alpha Vantage requires 1 request per second)
-    console.log('Waiting 1 second before fetching stock history...');
-    await new Promise(resolve => setTimeout(resolve, 1200)); // 1.2 second delay
+    displayStockData(data, symbol);
     
-    // Fetch historical data for chart
+    // Fetch historical data for chart (no delay needed for Twelve Data)
     await fetchStockHistory(symbol);
 
   } catch (error) {
@@ -176,11 +172,11 @@ async function fetchStockData(symbol) {
 // Display Stock Data
 function displayStockData(quote, symbol) {
   // Update DOM with stock data
-  stockSymbol.textContent = quote['01. symbol'];
-  stockPrice.textContent = `$${parseFloat(quote['05. price']).toFixed(2)}`;
+  stockSymbol.textContent = quote.symbol;
+  stockPrice.textContent = `$${parseFloat(quote.close).toFixed(2)}`;
   
-  const change = parseFloat(quote['09. change']);
-  const changePercent = parseFloat(quote['10. change percent'].replace('%', ''));
+  const change = parseFloat(quote.change);
+  const changePercent = parseFloat(quote.percent_change);
   
   stockChange.textContent = `$${change.toFixed(2)}`;
   stockChangePercent.textContent = `${changePercent.toFixed(2)}%`;
@@ -198,7 +194,7 @@ function displayStockData(quote, symbol) {
     stockChangePercent.classList.remove('positive');
   }
   
-  stockVolume.textContent = formatNumber(parseInt(quote['06. volume']));
+  stockVolume.textContent = formatNumber(parseInt(quote.volume));
   
   // Show stock section
   showSection(stockSection);
@@ -208,7 +204,7 @@ function displayStockData(quote, symbol) {
 async function fetchStockHistory(symbol) {
   try {
     const response = await fetch(
-      `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`
+      `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=8&apikey=${TWELVE_DATA_API_KEY}`
     );
 
     if (!response.ok) {
@@ -217,44 +213,28 @@ async function fetchStockHistory(symbol) {
 
     const data = await response.json();
     
-    // Debug: Log the response to see what we're getting
-    console.log('Stock history API response:', data);
-
     // Check for API errors
-    if (data.Note) {
-      console.warn('Stock chart unavailable: API rate limit reached');
-      console.warn('Tip: Alpha Vantage free tier allows only 5 calls/minute and 25 calls/day');
-      return; // Skip chart but don't show error since we have the stock data
-    }
-
-    if (data['Error Message']) {
-      console.warn('Stock chart unavailable:', data['Error Message']);
+    if (data.status === 'error') {
+      console.warn('Stock chart unavailable:', data.message);
       return;
     }
 
-    if (data['Information']) {
-      console.warn('Stock chart unavailable:', data['Information']);
-      return;
-    }
-
-    if (data['Time Series (Daily)']) {
-      const timeSeries = data['Time Series (Daily)'];
+    if (data.values && data.values.length > 0) {
       const prices = [];
       
-      // Get last 7 days
-      const dates = Object.keys(timeSeries).slice(0, 7).reverse();
-      dates.forEach(date => {
+      // Reverse to get chronological order
+      const values = data.values.reverse();
+      
+      values.forEach(item => {
         prices.push([
-          new Date(date).getTime(),
-          parseFloat(timeSeries[date]['4. close'])
+          new Date(item.datetime).getTime(),
+          parseFloat(item.close)
         ]);
       });
 
       displayChart(prices, symbol);
     } else {
       console.warn('Stock chart unavailable: No time series data in response');
-      console.warn('Response keys:', Object.keys(data));
-      console.warn('This usually means API rate limit or invalid API key');
     }
 
   } catch (error) {
